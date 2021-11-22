@@ -65,6 +65,7 @@ jobs:
                           echo $VERSION
                           echo $Name
                           echo ${{ github.workspace }}\$Name.$VERSION.nupkg
+                          & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package analyze "$package" -o "${{ github.workspace }}" -v $VERSION -l en-US
                           & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package pack "$package" -o "${{ github.workspace }}" -v $VERSION -l en-US
                           & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package deploy "${{ github.workspace }}\$Name.$VERSION.nupkg" "https://cloud.uipath.com" "${{secrets.TENANT_NAME}}" -t ${{secrets.USER_KEY}} -a ${{secrets.ACCOUNT_NAME}}
                        }    

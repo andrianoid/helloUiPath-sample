@@ -1,4 +1,4 @@
-name: UiPathBuildDeploy
+name: PS-BuildDeploy
 on:
   pull_request:
     branches: [ master ]

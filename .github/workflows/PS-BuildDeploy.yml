@@ -1,0 +1,63 @@
+name: UiPathBuildDeploy
+on:
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+
+ remove-old-artifacts:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Remove old artifacts
+      uses: c-hive/gha-remove-artifacts@v1
+      with:
+        age: '1 month'
+ 
+ Build:
+    runs-on: windows-latest
+    needs: remove-old-artifacts
+    steps:  
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+         format: YYMMDDHHmm
+         utcOffset: "+08:00"
+      - name: Use current time
+        env:
+         MAJOR: 1
+         MINOR: 0
+         BUILD: ${{github.run_number}}
+         TIME: "${{ steps.current-time.outputs.time }}"
+         R_TIME: "${{ steps.current-time.outputs.readableTime }}"
+         F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+         YEAR: "${{ steps.current-time.outputs.year }}"
+         DAY: "${{ steps.current-time.outputs.day }}"
+         PATH: 0
+        run: |
+          echo ${{env.MAJOR}}.${{env.MINOR}}.${{env.BUILD}}.${{env.F_TIME}} 
+
+      - uses: actions/checkout@v2
+      
+     # Facilitate the UiPath CLI in the github artifacts
+     
+      - run: |
+                 New-Item -Path "C:\\" -ItemType "directory" -Name "uipathcli";
+                 Invoke-WebRequest "https://www.myget.org/F/uipath-dev/api/v2/package/UiPath.CLI/1.0.7758.25166" -OutFile "C:\\uipathcli\\cli.zip";
+                 Expand-Archive -LiteralPath "C:\\uipathcli\\cli.Zip" -DestinationPath "C:\\uipathcli"; 
+                 
+      - name: setup ps module
+        run: |
+                 Install-PackageProvider -Name NuGet -Force
+                 Register-PSRepository -Name UiPath -SourceLocation https://www.myget.org/F/uipath-dev/api/v2
+                 Install-Module -Repository UiPath -Name UiPath.Powershell -Force
+                 Import-Module UiPath.PowerShell
+                           
+      - name: create temp file
+        id: versionvalue
+        run: |
+                Write-Host "Success??"
+
+   

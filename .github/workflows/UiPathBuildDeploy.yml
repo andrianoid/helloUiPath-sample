@@ -4,55 +4,33 @@ on:
     branches: [ master ]
   workflow_dispatch:
 jobs:
-
  remove-old-artifacts:
     runs-on: windows-latest
     timeout-minutes: 10
-
     steps:
     - name: Remove old artifacts
       uses: c-hive/gha-remove-artifacts@v1
       with:
         age: '1 month'
- 
  Build:
     runs-on: windows-latest
     needs: remove-old-artifacts
-    steps:  
-      - name: Get current time
-        uses: 1466587594/get-current-time@v2
-        id: current-time
-        with:
-         format: YYMMDDHHmm
-         utcOffset: "+08:00"
-      - name: Use current time
-        env:
-         MAJOR: 1
-         MINOR: 0
-         BUILD: ${{github.run_number}}
-         TIME: "${{ steps.current-time.outputs.time }}"
-         R_TIME: "${{ steps.current-time.outputs.readableTime }}"
-         F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-         YEAR: "${{ steps.current-time.outputs.year }}"
-         DAY: "${{ steps.current-time.outputs.day }}"
-         PATH: 0
+    steps:            
+      # Checkout code from this repo
+      - name: Checkout Code
+        uses: actions/checkout@v2      
+      # Facilitate the UiPath CLI in the github artifacts
+      - name: Get UiPath CLI
         run: |
-          echo ${{env.MAJOR}}.${{env.MINOR}}.${{env.BUILD}}.${{env.F_TIME}} 
-          
-      - uses: actions/checkout@v2
-      
-     # Facilitate the UiPath CLI in the github artifacts
-     
-      - run: |
                  New-Item -Path "C:\\" -ItemType "directory" -Name "uipathcli";
                  Invoke-WebRequest "https://www.myget.org/F/uipath-dev/api/v2/package/UiPath.CLI/1.0.7985.19721" -OutFile "C:\\uipathcli\\cli.zip";
-                 Expand-Archive -LiteralPath "C:\\uipathcli\\cli.Zip" -DestinationPath "C:\\uipathcli"; 
-                 
-                           
+                 Expand-Archive -LiteralPath "C:\\uipathcli\\cli.Zip" -DestinationPath "C:\\uipathcli";
+      # Use uipcli to package and deploy (for each project.json found)                           
       - name: Pack and Deploy
         run: |
                 foreach($package in Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter project.json -File)
                        {    
+                          # Get some data from the package.json for package naming
                           $json = Get-Content "$package" | Out-String | ConvertFrom-Json
                           $foo = $json.projectVersion
                           $Name=$json.name
@@ -64,10 +42,11 @@ jobs:
                           echo $VERSION
                           echo $Name
                           echo ${{ github.workspace }}\$Name.$VERSION.nupkg
+                          # Build and Deploy the Package
                           & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package pack "$package" -o "${{ github.workspace }}" -v $VERSION -l en-US
                           & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package deploy "${{ github.workspace }}\$($Name).$VERSION.nupkg" "https://cloud.uipath.com" "${{secrets.TENANT_NAME}}" -A ${{secrets.ACCOUNT_NAME}} -I ${{secrets.OAUTH_CLIENT_ID}} -S "${{secrets.OAUTH_CLIENT_SECRET}}" -o "Shared" --applicationScope "${{secrets.OAUTH_CLIENT_SCOPES}}"
                        }    
-
+      # Persist build artifacts
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0
         with:	 
@@ -75,9 +54,3 @@ jobs:
              path: ${{ github.workspace }}/**
              if-no-files-found: error
              retention-days: 2
-             
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2.0.9
-        with:
-            name: 'ProjectFiles'
-            path: 'ProjectFiles'

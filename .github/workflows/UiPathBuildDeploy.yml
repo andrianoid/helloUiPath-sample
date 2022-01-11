@@ -45,7 +45,7 @@ jobs:
      
       - run: |
                  New-Item -Path "C:\\" -ItemType "directory" -Name "uipathcli";
-                 Invoke-WebRequest "https://www.myget.org/F/uipath-dev/api/v2/package/UiPath.CLI/1.0.7758.25166" -OutFile "C:\\uipathcli\\cli.zip";
+                 Invoke-WebRequest "https://www.myget.org/F/uipath-dev/api/v2/package/UiPath.CLI/1.0.7985.19721" -OutFile "C:\\uipathcli\\cli.zip";
                  Expand-Archive -LiteralPath "C:\\uipathcli\\cli.Zip" -DestinationPath "C:\\uipathcli"; 
                  
                            
@@ -60,13 +60,13 @@ jobs:
                           echo "::set-output name=PATH::$package"
                           echo $foo
                           $v= [version] "$foo"
-                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build+1),"${{ steps.current-time.outputs.formattedTime }}"
+                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build+1),"${{github.run_number}}"
                           $VERSION=[string]$newversion
                           echo $VERSION
                           echo $Name
                           echo ${{ github.workspace }}\$Name.$VERSION.nupkg
                           & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package pack "$package" -o "${{ github.workspace }}" -v $VERSION -l en-US
-                          & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package deploy "${{ github.workspace }}\$Name.$VERSION.nupkg" "https://cloud.uipath.com" "${{secrets.TENANT_NAME}}" -t ${{secrets.USER_KEY}} -a ${{secrets.ACCOUNT_NAME}}
+                          & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package deploy "${{ github.workspace }}\$($Name)_Tests.$VERSION.nupkg" "https://cloud.uipath.com" "${{secrets.TENANT_NAME}}" -A ${{secrets.ACCOUNT_NAME}} -I ${{secrets.OAUTH_CLIENT_ID}} -S "${{secrets.OAUTH_CLIENT_SECRET}}" -o "Shared" --applicationScope "${{secrets.OAUTH_CLIENT_SCOPES}}"
                        }    
 
       - name: Upload a Build Artifact

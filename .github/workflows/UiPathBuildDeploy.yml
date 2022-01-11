@@ -49,8 +49,7 @@ jobs:
                  Expand-Archive -LiteralPath "C:\\uipathcli\\cli.Zip" -DestinationPath "C:\\uipathcli"; 
                  
                            
-      - name: create temp file
-        id: versionvalue
+      - name: Pack and Deploy
         run: |
                 foreach($package in Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter project.json -File)
                        {    

@@ -4,8 +4,13 @@ This project is a sample 'Hello World' project for UiPath that includes a 'build
 
 ## GitHub Actions - BuildAndDeploy
 
-A basic Build and Deploy YML file is included that will build the nuget package from your project, and will deploy it to a cloud orchestrator. The following 'Secrets' are required in your repository Settings -> Secrets:
+A basic [Build and Deploy YML file](.github/workflows/UiPathBuildDeploy.yml) is included that will build the nuget package from your project, and will deploy it to a cloud orchestrator. Authentication is handled with [External Applications](https://docs.uipath.com/automation-cloud/docs/managing-external-applications). The following 'Secrets' are required in your GitHub repository Settings -> Secrets:
 
-- TENANT_NAME
-- USER_KEY
-- ACCOUNT_NAME
+- **`TENANT_NAME`** - _Target Cloud Orchestrator Tenant_
+- **`ACCOUNT_NAME`** - _Target Cloud Orchestrator Account Name_ 
+- **`OAUTH_CLIENT_ID`** - _App ID of External Application_
+- **`OAUTH_CLIENT_SECRET`** - _App Secret of External Application_
+- **`OAUTH_CLIENT_SCOPES`** - _Required scopes granted to External Application_
+	> Note: the following scopes are required for the `package deploy` function:   
+	> **OR.BackgroundTasks OR.Execution OR.Folders OR.Settings**
+

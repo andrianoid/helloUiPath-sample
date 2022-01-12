@@ -4,22 +4,28 @@ This project is a sample 'Hello World' project for UiPath that includes a 'build
 
 ## UiPath Project
 
-The UiPath project accepts two input arguments:  
+The UiPath project accepts two input arguments:
+  
 - `in_greeting`  
 - `in_name`
 
-There are three simple test cases that are published:  
+The process will simply log a message in the format:
+
+	in_greeting + " " + in_name + "!!!!"
+
+There are three simple test cases that are published:
+  
 - `EnglishCase`  
 - `FrenchCase`  
 - `SpanishCase`  
 
-## GitHub Actions Workflows
+## GitHub Actions Environment
 
-### Environment Setup
+### Tools / Prerequisites
 
-In these examples, **Orchestrator Authentication** is handled with [External Applications](https://docs.uipath.com/automation-cloud/docs/managing-external-applications). 
+In these example workflows, **Orchestrator Authentication** is handled with [External Applications](https://docs.uipath.com/automation-cloud/docs/managing-external-applications). 
 
-[UiPath CLI](https://www.myget.org/feed/uipath-dev/package/nuget/UiPath.CLI) is used for Pack and Deploy functionality.
+[UiPath CLI](https://www.myget.org/feed/uipath-dev/package/nuget/UiPath.CLI) is used for Pack and Deploy functionality. It is light-weight and no installation is required.
 
 A [GitHub-hosted runner](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners) (windows-latest) is used to run the workflows.
 
@@ -34,54 +40,49 @@ The following **'Secrets' are required** in your GitHub repository Settings -> S
 
 
 
+## GitHub Actions Workflows
 
 
-### Build And Deploy (Process)
+### Build And Deploy (Process) - [UiPathBuildDeploy.yml](.github/workflows/UiPathBuildDeploy.yml) 
 
-#### [UiPathBuildDeploy.yml](.github/workflows/UiPathBuildDeploy.yml)  
-
-###### Required Oauth Scopes:     
   
-- OR.BackgroundTasks   
-- OR.Execution   
-- OR.Folders   
-- OR.Settings
 
-###### Workflow Steps
-
-- **Build process package** (`iupcli`)    
-- **Deploy to cloud orchestrator** (`iupcli`)    
-
-
-`UiPathBuildDeploy.yml` is run on a [GitHub-hosted runner](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners) (windows-latest).
-
-
-
-### Build, Deploy And Run (Tests)
-
-
-####[UiPathBuildDeployRun-Tests.yml](.github/workflows/UiPathBuildDeployRun-Tests.yml)  
-
-###### Required Oauth Scopes:     
-- OR.Assets   
-- OR.BackgroundTasks   
-- OR.Execution   
-- OR.Folders   
-- OR.Folders.Read   
-- OR.Jobs   
-- OR.Machines   
-- OR.Monitoring   
-- OR.Robots   
-- OR.Settings   
-- OR.Settings.Read   
-- OR.TestSetExecutions   
-- OR.TestSets   
-- OR.Users
+##### Required Oauth Scopes:     
   
-###### Workflow Steps
+- `OR.BackgroundTasks`   
+- `OR.Execution`   
+- `OR.Folders`   
+- `OR.Settings`
 
-- **Build test package** (`iupcli`)  
-- **Deploy to cloud orchestrator** (`iupcli`)    
+##### Workflow Steps
+
+- **Build process package** (`uipcli`)    
+- **Deploy to cloud orchestrator** (`uipcli`)    
+
+
+
+### Build, Deploy And Run (Tests) - [UiPathBuildDeployRun-Tests.yml](.github/workflows/UiPathBuildDeployRun-Tests.yml)    
+
+##### Required Oauth Scopes:     
+- `OR.Assets`   
+- `OR.BackgroundTasks`   
+- `OR.Execution`   
+- `OR.Folders`   
+- `OR.Folders.Read`   
+- `OR.Jobs`   
+- `OR.Machines`   
+- `OR.Monitoring`   
+- `OR.Robots`   
+- `OR.Settings`   
+- `OR.Settings.Read`   
+- `OR.TestSetExecutions`   
+- `OR.TestSets`   
+- `OR.Users`
+  
+##### Workflow Steps
+
+- **Build test package** (`uipcli`)  
+- **Deploy to cloud orchestrator** (`uipcli`)    
 - **Create test set** (`powershell`)
     - Get Access Token
     - Get Folder Id

@@ -1,3 +1,7 @@
-.settings/
+.settings/*
 .local/
-.objects/
+.local/AllDependencies.json
+.local/PackageCache.json
+.local/db/references.db
+.local/nuget.cache
+.objects/*

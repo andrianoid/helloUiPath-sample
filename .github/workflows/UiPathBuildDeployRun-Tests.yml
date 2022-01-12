@@ -238,10 +238,8 @@ jobs:
                             
                             Write-Host "All ($caseCount) test cases passed."
                           }
-                       }    
-
-
-                       }    
+                       }
+                          
       # Persist build artifacts
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0

@@ -6,6 +6,7 @@
     "UiPath.Excel.Activities": "[2.10.4]",
     "UiPath.Mail.Activities": "[1.10.5]",
     "UiPath.System.Activities": "[21.4.1]",
+    "UiPath.Testing.Activities": "[1.4.5]",
     "UiPath.UIAutomation.Activities": "[21.4.4]"
   },
   "webServices": [],
@@ -16,6 +17,7 @@
   "runtimeOptions": {
     "autoDispose": false,
     "isPausable": true,
+    "isAttended": false,
     "requiresUserInteraction": true,
     "supportsPersistence": false,
     "excludedLoggedData": [
@@ -24,7 +26,8 @@
     ],
     "executionType": "Workflow",
     "readyForPiP": false,
-    "startsInPiP": false
+    "startsInPiP": false,
+    "mustRestoreAllDependencies": false
   },
   "designOptions": {
     "projectProfile": "Developement",
@@ -36,7 +39,23 @@
     "processOptions": {
       "ignoredFiles": []
     },
-    "fileInfoCollection": [],
+    "fileInfoCollection": [
+      {
+        "editingStatus": "Publishable",
+        "testCaseId": "ba35c117-52ee-467a-804e-a670429db111",
+        "fileName": "EnglishCase.xaml"
+      },
+      {
+        "editingStatus": "Publishable",
+        "testCaseId": "bb551740-d400-44e0-81ca-b9fb9fb55a9c",
+        "fileName": "FrenchCase.xaml"
+      },
+      {
+        "editingStatus": "Publishable",
+        "testCaseId": "6b277a77-3dec-48e7-96bb-f5043fd47362",
+        "fileName": "SpanishCase.xaml"
+      }
+    ],
     "modernBehavior": false
   },
   "expressionLanguage": "VisualBasic",

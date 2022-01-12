@@ -1,0 +1,252 @@
+name: UiPathBuildDeploy
+on:
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+ remove-old-artifacts:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+    - name: Remove old artifacts
+      uses: c-hive/gha-remove-artifacts@v1
+      with:
+        age: '1 month'
+ Build:
+    runs-on: windows-latest
+    needs: remove-old-artifacts
+    steps:            
+      # Checkout code from this repo
+      - name: Checkout Code
+        uses: actions/checkout@v2      
+      # Facilitate the UiPath CLI in the github artifacts
+      - name: Get UiPath CLI
+        run: |
+                 New-Item -Path "C:\\" -ItemType "directory" -Name "uipathcli";
+                 Invoke-WebRequest "https://www.myget.org/F/uipath-dev/api/v2/package/UiPath.CLI/1.0.7985.19721" -OutFile "C:\\uipathcli\\cli.zip";
+                 Expand-Archive -LiteralPath "C:\\uipathcli\\cli.Zip" -DestinationPath "C:\\uipathcli";
+      # Use uipcli to package and deploy (for each project.json found)                           
+      - name: Pack and Deploy
+        run: |
+                foreach($package in Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter project.json -File)
+                       {    
+                          # Get some data from the package.json for package naming
+                          $json = Get-Content "$package" | Out-String | ConvertFrom-Json
+                          $foo = $json.projectVersion
+                          $Name=$json.name
+                          echo "::set-output name=PATH::$package"
+                          echo $foo
+                          $v= [version] "$foo"
+                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build+1),"${{github.run_number}}"
+                          $VERSION=[string]$newversion
+                          echo $VERSION
+                          echo $Name
+                          echo ${{ github.workspace }}\$Name.$VERSION.nupkg
+
+                          #############################################################
+                          # Build and Deploy the Package
+                          & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package pack "$package" -o "${{ github.workspace }}" -v $VERSION --outputType Tests
+                          & "C:\\uipathcli\\lib\\net461\\uipcli.exe" package deploy "${{ github.workspace }}\$($Name)_Tests.$VERSION.nupkg" "https://cloud.uipath.com" "${{secrets.TENANT_NAME}}" -A ${{secrets.ACCOUNT_NAME}} -I ${{secrets.OAUTH_CLIENT_ID}} -S "${{secrets.OAUTH_CLIENT_SECRET}}" -o "Shared" --applicationScope "${{secrets.OAUTH_CLIENT_SCOPES}}"
+
+                          ## >>>>>>>>>>>>>>>>>>> ########################################################
+                          ##
+                          ## Get Access Token
+                          ##
+                          echo "Getting Access Token..."
+                          $accessTokenParams = @{
+                            grant_type='client_credentials';
+                            client_id='${{secrets.OAUTH_CLIENT_ID}}';
+                            client_secret='${{secrets.OAUTH_CLIENT_SECRET}}';
+                            scope='${{secrets.OAUTH_CLIENT_SCOPES}}'
+                          }
+                          $tokenResponse = Invoke-WebRequest -Uri "https://cloud.uipath.com/identity_/connect/token" `
+                              -Method POST `
+                              -Body $accessTokenParams `
+                              -ContentType application/x-www-form-urlencoded
+                          $temp = $tokenResponse.Content | ConvertFrom-Json
+                          $access_token = $temp.access_token                          
+                          
+                          ## >>>>>>>>>>>>>>>>>>> ########################################################
+                          ##
+                          ## Get Folder Id
+                          ##
+                          $folderUrl = "${{secrets.OAUTH_BASE_URL}}odata/Folders";
+                          $headers = @{
+                              "Authorization" = "Bearer $access_token"
+                              "ContentType" = "application/json"
+                              "Accept" = "application/json"
+                          }
+                          $folderResponse = Invoke-WebRequest `
+                              -Uri $folderUrl `
+                              -Method GET `
+                              -Headers $headers `
+                              -ContentType application/x-www-form-urlencoded 
+                          $temp = $folderResponse.Content | ConvertFrom-Json
+                          foreach($folder in $temp.value){
+                              if($folder.DisplayName.equals("Shared")){
+                                  $folderId = $folder.id
+                              }
+                          }
+                          ### Add a header for folder(/org) ID
+                          $headers += @{
+                              "X-UIPATH-OrganizationUnitId" = "$folderId"
+                          }                                                 
+                          
+                          
+                          
+                          ## >>>>>>>>>>>>>>>>>>> ########################################################
+                          ##
+                          ## Get Release
+                          ##
+                          Write-Host "Getting Release..."
+                          $releaseUrl = "${{secrets.OAUTH_BASE_URL}}odata/Releases";
+                          $releaseResponse = Invoke-WebRequest `
+                              -Uri $releaseUrl `
+                              -Method GET `
+                              -Headers $headers
+                          $temp = $releaseResponse.Content | ConvertFrom-Json
+                          foreach($release in $temp.value){
+                              ## These are for test package
+                              if($release.ProcessKey.equals("${{env.TEST_IDENTIFIER}}")){
+                                  
+                                  $releaseId = $release.Id;
+                                  $releaseVersion = $release.ProcessVersion;
+                              }
+                              ## These are for prod process/job release key
+                              if($release.ProcessKey.equals("${{env.PROCESS_IDENTIFIER}}")){
+                                  $releaseKey = $release.Key;
+                              }
+                          }
+                          
+                          
+                          ## >>>>>>>>>>>>>>>>>>> ########################################################
+                          ##
+                          ## Get TestCaseDefinitions
+                          ##
+                          Write-Host "Getting TestCaseDefinitions..."
+                          $testCaseDefUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestCaseDefinitions";
+                          $testCaseDefResponse = Invoke-WebRequest `
+                              -Uri $testCaseDefUrl `
+                              -Method GET `
+                              -Headers $headers
+                          $temp = $testCaseDefResponse.Content | ConvertFrom-Json
+                          $caseIds = @()
+                          $caseCount = 0;
+                          foreach($testCase in $temp.value){
+                              if($testCase.PackageIdentifier.equals("${{env.TEST_IDENTIFIER}}")){
+                                  $caseIds += $testCase.Id
+                                  $caseCount++;
+                              }
+                          }
+                             
+                             
+                          ## Only continue if test cases are found
+                          Write-Host $caseCount
+                          if($caseCount.equals(0)){
+                            Write-Host "No test cases found - exiting"
+                            exit 0
+                          }
+                          
+                          ## >>>>>>>>>>>>>>>>>>> ########################################################
+                          ##
+                          ## Create Test Set
+                          ##
+                          Write-Host "Creating TestSet..."
+                          $testSetUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestSets";
+                          $testSetName = "${{env.TEST_IDENTIFIER}}$VERSION"
+                          $packageIdentifier = "${{env.TEST_IDENTIFIER}}"
+                          $versionMask = "1.0.*"
+                          $createTestSetParams = @{
+                              Name="$testSetName"; # -<pull-request>-<commitId>
+                              Description="Description"
+                              Packages=@(@{
+                                  PackageIdentifier="$packageIdentifier";
+                                  VersionMask="$versionMask";
+                                  IncludePrerelease=$False;
+                              });
+                              TestCases=@();
+                              InputArguments=@();
+                              EnableCoverage=$False;
+                          }
+                          ## Add to testCases for each caseId
+                          foreach($caseId in $caseIds){
+                              $createTestSetParams.TestCases += @{
+                                  Enabled=$True;
+                                  VersionNumber="$VERSION";
+                                  ReleaseId=$releaseId;
+                                  DefinitionId=$caseId;
+                              }
+                          }                          
+                          $body = $createTestSetParams | ConvertTo-Json
+                          $testSetResponse = Invoke-WebRequest `
+                             -Uri $testSetUrl `
+                              -Method POST `
+                              -Body $body `
+                              -Headers $headers `
+                              -ContentType "application/json"
+                          $temp = $testSetResponse.Content | ConvertFrom-Json
+                          $testSetKey = $temp.Key
+                          $testSetId = $temp.Id
+                          Write-Host "TestSet Created: '$($temp.Name)' (Key:$($temp.Key))(ID:$($temp.Id))"
+                          
+                          
+                          ## >>>>>>>>>>>>>>>>>>> ########################################################
+                          ##
+                          ## Run Test Set
+                          ##                          
+                          Write-Host "Running TestCases..."
+                          Write-Host "========================"
+                          $testExecutionUrl = "${{secrets.OAUTH_BASE_URL}}api/TestAutomation/StartTestSetExecution?testSetKey=$testSetKey";
+                          $testSetResponse = Invoke-WebRequest `
+                              -Uri $testExecutionUrl `
+                              -Method POST `
+                              -Headers $headers `
+                              -ContentType "application/json"
+                          $testExecutionKey = $testSetResponse.Content
+                          Write-Host "Test Execution ID: $testExecutionKey"
+                          
+                          $testStatus = "Pending"
+                          Do
+                          {
+                          
+                            ## Wait for test set to be complete....
+                              ## Wait a few seconds
+                              ## Make call to get status of test execution
+                              $testExecutionStatusUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestSetExecutions($testExecutionKey)";
+                              $testStatusResponse = Invoke-WebRequest -Uri $testExecutionStatusUrl -Method GET -Headers $headers -ContentType "application/json"
+                              $temp = $testStatusResponse.Content | ConvertFrom-Json
+                              $testStatus = $temp.Status
+                                
+                              "Status: $testStatus... checking again in 5 seconds"
+                                
+                              if(!$testStatus.equals('Passed')){
+                                  ## Wait before retry
+                                  Start-Sleep -s 5
+                              }
+                                
+                          } While ($testStatus.equals('Pending') -or $testStatus.equals('Running'))      
+                                  
+                          $temp        
+                                                    
+                          if($testStatus.equals("Failed")){
+                            ## TODO: more specific actions
+                            throw "One or more tests failed.";
+                          }                          
+                          
+                          if($testStatus.equals("Passed")){
+                            ## Do something?
+                            
+                            Write-Host "All ($caseCount) test cases passed."
+                          }
+                       }    
+
+
+                       }    
+      # Persist build artifacts
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.0
+        with:	 
+             name: ProjectFiles
+             path: ${{ github.workspace }}/**
+             if-no-files-found: error
+             retention-days: 2

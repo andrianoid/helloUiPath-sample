@@ -66,11 +66,14 @@ jobs:
                           $temp = $tokenResponse.Content | ConvertFrom-Json
                           $access_token = $temp.access_token                          
                           
+                          ## Set orch base url for reference:
+                          $baseUrl = "https://cloud.uipath.com/${{secrets.ACCOUNT_NAME}}/${{secrets.TENANT_NAME}}/orchestrator_/"
+
                           ## >>>>>>>>>>>>>>>>>>> ########################################################
                           ##
                           ## Get Folder Id
                           ##
-                          $folderUrl = "${{secrets.OAUTH_BASE_URL}}odata/Folders";
+                          $folderUrl = "$($baseUrl)odata/Folders";
                           $headers = @{
                               "Authorization" = "Bearer $access_token"
                               "ContentType" = "application/json"
@@ -99,7 +102,7 @@ jobs:
                           ## Get Release
                           ##
                           Write-Host "Getting Release..."
-                          $releaseUrl = "${{secrets.OAUTH_BASE_URL}}odata/Releases";
+                          $releaseUrl = "$($baseUrl)odata/Releases";
                           $releaseResponse = Invoke-WebRequest `
                               -Uri $releaseUrl `
                               -Method GET `
@@ -124,7 +127,7 @@ jobs:
                           ## Get TestCaseDefinitions
                           ##
                           Write-Host "Getting TestCaseDefinitions..."
-                          $testCaseDefUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestCaseDefinitions";
+                          $testCaseDefUrl = "$($baseUrl)odata/TestCaseDefinitions";
                           $testCaseDefResponse = Invoke-WebRequest `
                               -Uri $testCaseDefUrl `
                               -Method GET `
@@ -152,7 +155,7 @@ jobs:
                           ## Create Test Set
                           ##
                           Write-Host "Creating TestSet..."
-                          $testSetUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestSets";
+                          $testSetUrl = "$($baseUrl)odata/TestSets";
                           $testSetName = "$($Name)_Tests$VERSION"
                           $packageIdentifier = "$($Name)_Tests"
                           $versionMask = "1.0.*"
@@ -196,7 +199,7 @@ jobs:
                           ##                          
                           Write-Host "Running TestCases..."
                           Write-Host "========================"
-                          $testExecutionUrl = "${{secrets.OAUTH_BASE_URL}}api/TestAutomation/StartTestSetExecution?testSetKey=$testSetKey";
+                          $testExecutionUrl = "$($baseUrl)api/TestAutomation/StartTestSetExecution?testSetKey=$testSetKey";
                           $testSetResponse = Invoke-WebRequest `
                               -Uri $testExecutionUrl `
                               -Method POST `
@@ -212,7 +215,7 @@ jobs:
                             ## Wait for test set to be complete....
                               ## Wait a few seconds
                               ## Make call to get status of test execution
-                              $testExecutionStatusUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestSetExecutions($testExecutionKey)";
+                              $testExecutionStatusUrl = "$($baseUrl)odata/TestSetExecutions($testExecutionKey)";
                               $testStatusResponse = Invoke-WebRequest -Uri $testExecutionStatusUrl -Method GET -Headers $headers -ContentType "application/json"
                               $temp = $testStatusResponse.Content | ConvertFrom-Json
                               $testStatus = $temp.Status

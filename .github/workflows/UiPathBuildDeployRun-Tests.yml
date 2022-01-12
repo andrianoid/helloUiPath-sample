@@ -107,13 +107,13 @@ jobs:
                           $temp = $releaseResponse.Content | ConvertFrom-Json
                           foreach($release in $temp.value){
                               ## These are for test package
-                              if($release.ProcessKey.equals("${{env.TEST_IDENTIFIER}}")){
+                              if($release.ProcessKey.equals("$($Name)_Tests")){
                                   
                                   $releaseId = $release.Id;
                                   $releaseVersion = $release.ProcessVersion;
                               }
                               ## These are for prod process/job release key
-                              if($release.ProcessKey.equals("${{env.PROCESS_IDENTIFIER}}")){
+                              if($release.ProcessKey.equals("$($Name)")){
                                   $releaseKey = $release.Key;
                               }
                           }
@@ -133,7 +133,7 @@ jobs:
                           $caseIds = @()
                           $caseCount = 0;
                           foreach($testCase in $temp.value){
-                              if($testCase.PackageIdentifier.equals("${{env.TEST_IDENTIFIER}}")){
+                              if($testCase.PackageIdentifier.equals("$($Name)_Tests")){
                                   $caseIds += $testCase.Id
                                   $caseCount++;
                               }
@@ -239,7 +239,7 @@ jobs:
                             Write-Host "All ($caseCount) test cases passed."
                           }
                        }
-                          
+
       # Persist build artifacts
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0

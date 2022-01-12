@@ -1,7 +1,7 @@
 name: UiPathBuildDeployRun-Tests
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ develop ]
   workflow_dispatch:
 jobs:
  remove-old-artifacts:

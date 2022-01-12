@@ -153,8 +153,8 @@ jobs:
                           ##
                           Write-Host "Creating TestSet..."
                           $testSetUrl = "${{secrets.OAUTH_BASE_URL}}odata/TestSets";
-                          $testSetName = "${{env.TEST_IDENTIFIER}}$VERSION"
-                          $packageIdentifier = "${{env.TEST_IDENTIFIER}}"
+                          $testSetName = "$($Name)_Tests$VERSION"
+                          $packageIdentifier = "$($Name)_Tests"
                           $versionMask = "1.0.*"
                           $createTestSetParams = @{
                               Name="$testSetName"; # -<pull-request>-<commitId>

@@ -1,6 +1,6 @@
 name: UiPathBuildDeployRun-Tests
 on:
-  pull_request:
+  push:
     branches: [ develop ]
   workflow_dispatch:
 jobs:

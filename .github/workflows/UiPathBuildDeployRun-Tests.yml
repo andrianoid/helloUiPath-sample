@@ -115,6 +115,7 @@ jobs:
                                   
                                   $releaseId = $release.Id;
                                   $releaseVersion = $release.ProcessVersion;
+                                  $releaseVersion
                               }
                               ## These are for prod process/job release key
                               if($release.ProcessKey.equals("$($Name)")){

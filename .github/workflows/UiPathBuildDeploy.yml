@@ -36,7 +36,7 @@ jobs:
                           echo "::set-output name=PATH::$package"
                           echo $foo
                           $v= [version] "$foo"
-                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build+1),"${{github.run_number}}"
+                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build),"${{github.run_number}}"
                           $VERSION=[string]$newversion
                           echo $VERSION
                           echo $Name

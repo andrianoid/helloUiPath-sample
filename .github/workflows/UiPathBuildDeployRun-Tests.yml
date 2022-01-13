@@ -37,7 +37,8 @@ jobs:
                           echo "::set-output name=PATH::$package"
                           echo $foo
                           $v= [version] "$foo"
-                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build+1),"${{github.run_number}}"
+                          $versionMask = "{0}.{1}.*" -f $v.Major, $v.Minor                          
+                          $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build),"${{github.run_number}}"
                           $VERSION=[string]$newversion
                           echo $VERSION
                           echo $Name
@@ -135,10 +136,12 @@ jobs:
                           $temp = $testCaseDefResponse.Content | ConvertFrom-Json
                           $caseIds = @()
                           $caseCount = 0;
-                          foreach($testCase in $temp.value){
+                          foreach($testCase in $temp.value){                              
                               if($testCase.PackageIdentifier.equals("$($Name)_Tests")){
-                                  $caseIds += $testCase.Id
-                                  $caseCount++;
+                                  if($testCase.LatestVersion.equals($newversion)){
+                                    $caseIds += $testCase.Id
+                                    $caseCount++;
+                                  }
                               }
                           }
                              
@@ -158,7 +161,6 @@ jobs:
                           $testSetUrl = "$($baseUrl)odata/TestSets";
                           $testSetName = "$($Name)_Tests$VERSION"
                           $packageIdentifier = "$($Name)_Tests"
-                          $versionMask = "1.0.*"
                           $createTestSetParams = @{
                               Name="$testSetName"; # -<pull-request>-<commitId>
                               Description="Description"

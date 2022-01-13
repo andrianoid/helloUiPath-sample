@@ -115,7 +115,6 @@ jobs:
                                   
                                   $releaseId = $release.Id;
                                   $releaseVersion = $release.ProcessVersion;
-                                  $releaseVersion
                               }
                               ## These are for prod process/job release key
                               if($release.ProcessKey.equals("$($Name)")){
@@ -138,7 +137,9 @@ jobs:
                           $caseIds = @()
                           $caseCount = 0;
                           foreach($testCase in $temp.value){
+                              
                               if($testCase.PackageIdentifier.equals("$($Name)_Tests")){
+                                  Write-Host $testCase
                                   $caseIds += $testCase.Id
                                   $caseCount++;
                               }

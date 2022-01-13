@@ -37,6 +37,7 @@ jobs:
                           echo "::set-output name=PATH::$package"
                           echo $foo
                           $v= [version] "$foo"
+                          $versionMask = "{0}.{1}.{2}" -f $v.Major, $v.Minor, ($v.Build)                          
                           $newversion= "{0}.{1}.{2}.{3}" -f $v.Major, $v.Minor, ($v.Build),"${{github.run_number}}"
                           $VERSION=[string]$newversion
                           echo $VERSION
@@ -158,7 +159,6 @@ jobs:
                           $testSetUrl = "$($baseUrl)odata/TestSets";
                           $testSetName = "$($Name)_Tests$VERSION"
                           $packageIdentifier = "$($Name)_Tests"
-                          $versionMask = "1.0.*"
                           $createTestSetParams = @{
                               Name="$testSetName"; # -<pull-request>-<commitId>
                               Description="Description"

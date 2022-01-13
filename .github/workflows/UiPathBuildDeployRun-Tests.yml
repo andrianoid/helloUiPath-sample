@@ -136,12 +136,12 @@ jobs:
                           $temp = $testCaseDefResponse.Content | ConvertFrom-Json
                           $caseIds = @()
                           $caseCount = 0;
-                          foreach($testCase in $temp.value){
-                              
+                          foreach($testCase in $temp.value){                              
                               if($testCase.PackageIdentifier.equals("$($Name)_Tests")){
-                                  Write-Host $testCase
-                                  $caseIds += $testCase.Id
-                                  $caseCount++;
+                                  if($testCase.LatestVersion.equals($newversion)){
+                                    $caseIds += $testCase.Id
+                                    $caseCount++;
+                                  }
                               }
                           }
                              

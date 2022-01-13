@@ -31,7 +31,8 @@ A [GitHub-hosted runner](https://docs.github.com/en/actions/using-github-hosted-
 
 The following **'Secrets' are required** in your GitHub repository Settings -> Secrets:
 
-- **`TENANT_NAME`** - _Target Cloud Orchestrator Tenant_
+- **`TEST_TENANT_NAME`** - _Target Cloud Orchestrator Tenant for Automated Tests_
+- **`UAT_TENANT_NAME`** - _Target Cloud Orchestrator Tenant for Process Package (UAT)_
 - **`ACCOUNT_NAME`** - _Target Cloud Orchestrator Account Name_ 
 - **`OAUTH_CLIENT_ID`** - _App ID of External Application_
 - **`OAUTH_CLIENT_SECRET`** - _App Secret of External Application_
